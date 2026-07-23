@@ -1,6 +1,5 @@
 import sql from '../../db'
 import { createClient } from '@/supabase/server'
-import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,11 +52,8 @@ export default async function SupabaseTestPage() {
   let error: any = null
 
   try {
-    // Aguarda os cookies (compatível com Next.js 15+)
-    const cookieStore = await cookies()
-    
-    // Instancia o cliente do servidor
-    const supabase = await createClient(cookieStore)
+    // 🚀 O createClient() agora lê os cookies internamente sem receber argumentos
+    const supabase = await createClient()
 
     await ensureTodosTable(supabase)
 
