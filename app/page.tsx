@@ -4,6 +4,8 @@ import ProfileHeader from "@/components/ProfileHeader";
 import TagFilter from "@/components/TagFilter";
 import ProjectCard from "@/components/ProjectCard";
 
+export const dynamic = "force-dynamic";
+
 interface SearchParams {
   tag?: string;
 }
