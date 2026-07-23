@@ -1,11 +1,18 @@
 import { prisma } from "@/lib/prisma";
+import { getFallbackTags } from "@/lib/fallback-store";
 import ProjectForm from "@/components/ProjectForm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function NovoProjeto() {
-  const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  let tags = [] as Array<{ id: string; name: string }>;
+
+  try {
+    tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  } catch {
+    tags = getFallbackTags();
+  }
 
   return (
     <main className="min-h-screen bg-blueprint-dark bg-grid bg-grid px-6 py-16">

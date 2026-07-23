@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { addFallbackProject, getFallbackProjects } from "@/lib/fallback-store";
 
 export const dynamic = "force-dynamic";
 
@@ -17,22 +18,22 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(projects);
   } catch {
-    return NextResponse.json([]);
+    return NextResponse.json(getFallbackProjects());
   }
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { name, context, execution, learning, tags, links } = body as {
-      name: string;
-      context: string;
-      execution: string;
-      learning: string;
-      tags: string[];
-      links: { label: string; url: string }[];
-    };
+  const body = await req.json().catch(() => null);
+  const { name, context, execution, learning, tags, links } = (body ?? {}) as {
+    name?: string;
+    context?: string;
+    execution?: string;
+    learning?: string;
+    tags?: string[];
+    links?: { label: string; url: string }[];
+  };
 
+  try {
     if (!name || !context || !execution || !learning) {
       return NextResponse.json(
         { error: "Nome, contexto, execução e aprendizado são obrigatórios." },
@@ -66,6 +67,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(project, { status: 201 });
   } catch {
-    return NextResponse.json({ error: "Falha ao criar o projeto." }, { status: 500 });
+    const fallbackProject = addFallbackProject({
+      name: name ?? "",
+      context: context ?? "",
+      execution: execution ?? "",
+      learning: learning ?? "",
+      tags,
+      links,
+    });
+
+    return NextResponse.json(fallbackProject, { status: 201 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getFallbackProfile, updateFallbackProfile } from "@/lib/fallback-store";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export async function GET() {
     const profile = await prisma.profile.findFirst();
     return NextResponse.json(profile);
   } catch {
-    return NextResponse.json(null);
+    return NextResponse.json(getFallbackProfile());
   }
 }
 
@@ -29,6 +30,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(profile);
   } catch {
-    return NextResponse.json({ error: "Falha ao atualizar o perfil." }, { status: 500 });
+    return NextResponse.json(updateFallbackProfile({ id, name, role, bio }));
   }
 }

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getFallbackProfile, getFallbackProjects, getFallbackTags } from "@/lib/fallback-store";
 import ProfileHeader from "@/components/ProfileHeader";
 import TagFilter from "@/components/TagFilter";
 import ProjectCard from "@/components/ProjectCard";
@@ -75,9 +76,9 @@ export default async function Home({
     ),
   ]);
 
-  const profileData = (profile ?? null) as Profile | null;
-  const tagsData = (tags ?? []) as Tag[];
-  const projectsData = (projects ?? []) as Project[];
+  const profileData = (profile ?? getFallbackProfile()) as Profile | null;
+  const tagsData = ((tags ?? getFallbackTags()) as Tag[]).filter(Boolean);
+  const projectsData = ((projects ?? getFallbackProjects()) as Project[]).filter(Boolean);
 
   return (
     <main className="min-h-screen bg-blueprint-dark">
