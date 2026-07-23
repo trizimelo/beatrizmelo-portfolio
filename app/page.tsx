@@ -3,7 +3,6 @@ import { getFallbackProfile, getFallbackProjects, getFallbackTags } from "@/lib/
 import ProfileHeader from "@/components/ProfileHeader";
 import TagFilter from "@/components/TagFilter";
 import ProjectCard from "@/components/ProjectCard";
-import { Key } from "react";
 
 interface SearchParams {
   tag?: string;
@@ -38,20 +37,35 @@ interface Project {
 
 export const revalidate = 60;
 
-const withTimeout = <T,>(promise: Promise<T>, ms = 1500) =>
-  new Promise<T | null>((resolve) => {
-    const timer = setTimeout(() => resolve(null), ms);
+async function loadHomeData(activeTag?: string) {
+  const [profileResult, tagsResult, projectsResult] = await Promise.allSettled([
+    prisma.profile.findFirst(),
+    prisma.tag.findMany({ orderBy: { name: "asc" } }),
+    prisma.project.findMany({
+      where: activeTag ? { tags: { some: { name: activeTag } } } : undefined,
+      include: { tags: true, links: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
-    promise
-      .then((value) => {
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch(() => {
-        clearTimeout(timer);
-        resolve(null);
-      });
-  });
+  if (profileResult.status === "rejected") {
+    console.error("Failed to load profile", profileResult.reason);
+  }
+
+  if (tagsResult.status === "rejected") {
+    console.error("Failed to load tags", tagsResult.reason);
+  }
+
+  if (projectsResult.status === "rejected") {
+    console.error("Failed to load projects", projectsResult.reason);
+  }
+
+  return {
+    profile: profileResult.status === "fulfilled" ? profileResult.value : null,
+    tags: tagsResult.status === "fulfilled" ? tagsResult.value : null,
+    projects: projectsResult.status === "fulfilled" ? projectsResult.value : null,
+  };
+}
 
 export default async function Home({
   searchParams,
@@ -59,22 +73,7 @@ export default async function Home({
   searchParams: { tag?: string };
 }) {
   const activeTag = searchParams.tag;
-
-  const [profile, tags, projects] = await Promise.all([
-    withTimeout(prisma.profile.findFirst(), 1500),
-    withTimeout(
-      prisma.tag.findMany({ orderBy: { name: "asc" } }),
-      1500,
-    ),
-    withTimeout(
-      prisma.project.findMany({
-        where: activeTag ? { tags: { some: { name: activeTag } } } : undefined,
-        include: { tags: true, links: true },
-        orderBy: { createdAt: "desc" },
-      }),
-      2000,
-    ),
-  ]);
+  const { profile, tags, projects } = await loadHomeData(activeTag);
 
   const profileData = (profile ?? getFallbackProfile()) as Profile | null;
   const tagsData = ((tags ?? getFallbackTags()) as Tag[]).filter(Boolean);
