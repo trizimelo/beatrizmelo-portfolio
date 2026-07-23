@@ -66,16 +66,25 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(project, { status: 201 });
-  } catch {
-    const fallbackProject = addFallbackProject({
-      name: name ?? "",
-      context: context ?? "",
-      execution: execution ?? "",
-      learning: learning ?? "",
-      tags,
-      links,
-    });
+  } catch (error) {
+    console.error("Failed to create project", error);
 
-    return NextResponse.json(fallbackProject, { status: 201 });
+    if (process.env.NODE_ENV === "development") {
+      const fallbackProject = addFallbackProject({
+        name: name ?? "",
+        context: context ?? "",
+        execution: execution ?? "",
+        learning: learning ?? "",
+        tags,
+        links,
+      });
+
+      return NextResponse.json(fallbackProject, { status: 201 });
+    }
+
+    return NextResponse.json(
+      { error: "Não foi possível salvar o projeto no banco. Verifique a conexão do Supabase." },
+      { status: 500 }
+    );
   }
 }
