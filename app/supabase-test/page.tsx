@@ -1,11 +1,44 @@
+import sql from '../../db'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
+
+async function ensureTodosTable(supabase: Awaited<ReturnType<typeof createClient>>) {
+  try {
+    await sql`
+      create table if not exists public.todos (
+        id uuid primary key default gen_random_uuid(),
+        name text not null,
+        created_at timestamptz default now()
+      )
+    `
+
+    await sql`
+      create policy if not exists "allow_public_read" on public.todos
+      for select using (true)
+    `
+
+    await sql`
+      create policy if not exists "allow_public_insert" on public.todos
+      for insert with check (true)
+    `
+
+    const { data: existingTodos, error } = await supabase.from('todos').select('id, name')
+
+    if (!error && (!existingTodos || existingTodos.length === 0)) {
+      await supabase.from('todos').insert({ name: 'Registro criado via app' })
+    }
+  } catch {
+    // Ignore initialization errors and surface them through the page status.
+  }
+}
 
 export default async function SupabaseTestPage() {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 
-  const { data: todos, error } = await supabase.from('todos').select()
+  await ensureTodosTable(supabase)
+
+  const { data: todos, error } = await supabase.from('todos').select('id, name')
 
   return (
     <main className="p-8">
