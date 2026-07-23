@@ -1,5 +1,5 @@
 import sql from '../../db'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/supabase/server'
 import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
