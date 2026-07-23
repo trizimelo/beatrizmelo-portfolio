@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  const profile = await prisma.profile.findFirst();
-  return NextResponse.json(profile);
+  try {
+    const profile = await prisma.profile.findFirst();
+    return NextResponse.json(profile);
+  } catch {
+    return NextResponse.json(null);
+  }
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
-  const { id, name, role, bio } = body as {
-    id: string;
-    name: string;
-    role: string;
-    bio: string;
-  };
+  try {
+    const body = await req.json();
+    const { id, name, role, bio } = body as {
+      id: string;
+      name: string;
+      role: string;
+      bio: string;
+    };
 
-  const profile = await prisma.profile.update({
-    where: { id },
-    data: { name, role, bio },
-  });
+    const profile = await prisma.profile.update({
+      where: { id },
+      data: { name, role, bio },
+    });
 
-  return NextResponse.json(profile);
+    return NextResponse.json(profile);
+  } catch {
+    return NextResponse.json({ error: "Falha ao atualizar o perfil." }, { status: 500 });
+  }
 }
