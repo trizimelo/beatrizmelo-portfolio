@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
-async function ensureTodosTable(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function ensureTodosTable(supabase: any) {
   try {
     await sql`
       create table if not exists public.todos (
@@ -35,12 +35,38 @@ async function ensureTodosTable(supabase: Awaited<ReturnType<typeof createClient
 }
 
 export default async function SupabaseTestPage() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  // Verifica se as variáveis de URL do Supabase estão presentes no servidor
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_STORAGE_SUPABASE_URL
 
-  await ensureTodosTable(supabase)
+  if (!supabaseUrl) {
+    return (
+      <main className="p-8">
+        <h1 className="text-2xl font-bold">Teste do Supabase</h1>
+        <p className="mt-2 text-red-600 font-semibold">
+          Erro de Configuração: A variável de ambiente NEXT_PUBLIC_SUPABASE_URL não foi encontrada na Vercel.
+        </p>
+      </main>
+    )
+  }
 
-  const { data: todos, error } = await supabase.from('todos').select('id, name')
+  let todos: { id: string; name: string }[] | null = null
+  let error: any = null
+
+  try {
+    // Aguarda os cookies (compatível com Next.js 15+)
+    const cookieStore = await cookies()
+    
+    // Instancia o cliente do servidor
+    const supabase = await createClient(cookieStore)
+
+    await ensureTodosTable(supabase)
+
+    const response = await supabase.from('todos').select('id, name')
+    todos = response.data
+    error = response.error
+  } catch (err: any) {
+    error = err
+  }
 
   return (
     <main className="p-8">
