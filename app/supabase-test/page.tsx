@@ -44,6 +44,11 @@ export default async function SupabaseTestPage() {
     <main className="p-8">
       <h1 className="text-2xl font-bold">Teste do Supabase</h1>
       <p className="mt-2 text-gray-600">Status: {error ? 'Erro ao consultar' : 'Conexão OK'}</p>
+      {error && (
+        <p className="mt-2 text-sm text-red-600">
+          {error.message || JSON.stringify(error)}
+        </p>
+      )}
 
       <ul className="mt-6 space-y-2">
         {(todos || []).map((todo: { id: string; name: string }) => (
