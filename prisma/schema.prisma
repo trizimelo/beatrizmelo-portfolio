@@ -1,0 +1,46 @@
+// Schema do portfólio de Beatriz Melo
+// Rode `npx prisma migrate dev --name init` depois de configurar DATABASE_URL no .env
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  projects Project[] @relation("ProjectTags")
+}
+
+model Link {
+  id        String  @id @default(cuid())
+  label     String
+  url       String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String // nome da iniciativa
+  context   String // contexto em que se inseria
+  execution String // o que foi feito
+  learning  String // aprendizado
+  links     Link[]
+  tags      Tag[]    @relation("ProjectTags")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
