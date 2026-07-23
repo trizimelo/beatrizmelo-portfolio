@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { addFallbackProject, getFallbackProjects } from "@/lib/fallback-store";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +16,12 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(projects);
-  } catch {
-    return NextResponse.json(getFallbackProjects());
+  } catch (error) {
+    console.error("Failed to load projects", error);
+    return NextResponse.json(
+      { error: "Não foi possível carregar os projetos." },
+      { status: 500 }
+    );
   }
 }
 
@@ -68,22 +71,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error("Failed to create project", error);
-
-    if (process.env.NODE_ENV === "development") {
-      const fallbackProject = addFallbackProject({
-        name: name ?? "",
-        context: context ?? "",
-        execution: execution ?? "",
-        learning: learning ?? "",
-        tags,
-        links,
-      });
-
-      return NextResponse.json(fallbackProject, { status: 201 });
-    }
-
     return NextResponse.json(
-      { error: "Não foi possível salvar o projeto no banco. Verifique a conexão do Supabase." },
+      { error: "Não foi possível salvar o projeto no banco. Verifique a conexão do banco." },
       { status: 500 }
     );
   }

@@ -2,6 +2,8 @@ import sql from '../../db'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 async function ensureTodosTable(supabase: Awaited<ReturnType<typeof createClient>>) {
   try {
     await sql`
