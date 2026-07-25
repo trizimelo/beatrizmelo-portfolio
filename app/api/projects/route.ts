@@ -44,6 +44,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const uniqueTags = [
+      ...new Set((tags || []).map((t) => t?.trim()).filter(Boolean)),
+    ];
+
+    const safeLinks = Array.isArray(links)
+      ? links.filter((l) => l?.label && l?.url)
+      : [];
+
     const project = await prisma.project.create({
       data: {
         name,
@@ -51,17 +59,14 @@ export async function POST(req: NextRequest) {
         execution,
         learning,
         tags: {
-          connectOrCreate: (tags || [])
-            .map((t) => t.trim())
-            .filter(Boolean)
-            .map((t) => ({
-              where: { name: t },
-              create: { name: t },
-            })),
+          connectOrCreate: uniqueTags.map((t) => ({
+            where: { name: t },
+            create: { name: t },
+          })),
         },
         links: {
           createMany: {
-            data: (links || []).filter((l) => l.label && l.url),
+            data: safeLinks,
           },
         },
       },
@@ -72,7 +77,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Failed to create project", error);
     return NextResponse.json(
-      { error: "Não foi possível salvar o projeto no banco. Verifique a conexão do banco." },
+      {
+        error: "Não foi possível salvar o projeto no banco. Verifique a conexão do banco.",
+        ...(process.env.NODE_ENV === "development" && { detail: String(error) }),
+      },
       { status: 500 }
     );
   }
